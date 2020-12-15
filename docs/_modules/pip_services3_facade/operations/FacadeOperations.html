@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pip_services3_facade.operations.FacadeOperations &#8212; Pip.Services Facade for Python API</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_facade.operations.FacadeOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pip_services3_facade.operations.FacadeOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+
+<span class="kn">from</span> <span class="nn">pip_services3_commons.config</span> <span class="kn">import</span> <span class="n">IConfigurable</span><span class="p">,</span> <span class="n">ConfigParams</span>
+<span class="kn">from</span> <span class="nn">pip_services3_commons.data</span> <span class="kn">import</span> <span class="n">FilterParams</span><span class="p">,</span> <span class="n">PagingParams</span>
+<span class="kn">from</span> <span class="nn">pip_services3_commons.errors</span> <span class="kn">import</span> <span class="n">BadRequestException</span><span class="p">,</span> <span class="n">UnauthorizedException</span><span class="p">,</span> <span class="n">NotFoundException</span><span class="p">,</span> \
+    <span class="n">ConflictException</span><span class="p">,</span> <span class="n">UnknownException</span>
+<span class="kn">from</span> <span class="nn">pip_services3_commons.refer</span> <span class="kn">import</span> <span class="n">IReferences</span><span class="p">,</span> <span class="n">IReferenceable</span><span class="p">,</span> <span class="n">DependencyResolver</span>
+<span class="kn">from</span> <span class="nn">pip_services3_components.count</span> <span class="kn">import</span> <span class="n">CompositeCounters</span>
+<span class="kn">from</span> <span class="nn">pip_services3_components.log</span> <span class="kn">import</span> <span class="n">CompositeLogger</span>
+<span class="kn">from</span> <span class="nn">pip_services3_rpc.services</span> <span class="kn">import</span> <span class="n">HttpResponseSender</span>
+
+
+<div class="viewcode-block" id="FacadeOperations"><a class="viewcode-back" href="../../../pip_services3_facade.operations.FacadeOperations.html#pip_services3_facade.operations.FacadeOperations.FacadeOperations">[docs]</a><span class="k">class</span> <span class="nc">FacadeOperations</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">IConfigurable</span><span class="p">,</span> <span class="n">IReferenceable</span><span class="p">):</span>
+    <span class="n">_logger</span> <span class="o">=</span> <span class="n">CompositeLogger</span><span class="p">()</span>
+    <span class="n">_counters</span> <span class="o">=</span> <span class="n">CompositeCounters</span><span class="p">()</span>
+    <span class="n">_dependencyResolver</span> <span class="o">=</span> <span class="n">DependencyResolver</span><span class="p">()</span>
+
+<div class="viewcode-block" id="FacadeOperations.configure"><a class="viewcode-back" href="../../../pip_services3_facade.operations.FacadeOperations.html#pip_services3_facade.operations.FacadeOperations.FacadeOperations.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dependencyResolver</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FacadeOperations.set_references"><a class="viewcode-back" href="../../../pip_services3_facade.operations.FacadeOperations.html#pip_services3_facade.operations.FacadeOperations.FacadeOperations.set_references">[docs]</a>    <span class="k">def</span> <span class="nf">set_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">references</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_counters</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dependencyResolver</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_correlation_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">req</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;correlation_id&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_filter_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+        <span class="n">key_value_req</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">req</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;skip&#39;</span><span class="p">,</span> <span class="s1">&#39;take&#39;</span><span class="p">,</span> <span class="s1">&#39;total&#39;</span><span class="p">]:</span>
+                <span class="n">key_value_req</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="nb">filter</span> <span class="o">=</span> <span class="n">FilterParams</span><span class="o">.</span><span class="n">from_value</span><span class="p">(</span><span class="n">key_value_req</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">filter</span>
+
+    <span class="k">def</span> <span class="nf">_get_paging_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+        <span class="n">key_value_req</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">req</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;skip&#39;</span><span class="p">,</span> <span class="s1">&#39;take&#39;</span><span class="p">,</span> <span class="s1">&#39;total&#39;</span><span class="p">]:</span>
+                <span class="n">key_value_req</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="nb">filter</span> <span class="o">=</span> <span class="n">FilterParams</span><span class="o">.</span><span class="n">from_value</span><span class="p">(</span><span class="n">key_value_req</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">filter</span>
+
+    <span class="k">def</span> <span class="nf">_send_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">HttpResponseSender</span><span class="o">.</span><span class="n">send_result</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_empty_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">HttpResponseSender</span><span class="o">.</span><span class="n">send_empty_result</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_created_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">HttpResponseSender</span><span class="o">.</span><span class="n">send_created_result</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_deleted_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">HttpResponseSender</span><span class="o">.</span><span class="n">send_deleted_result</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="n">HttpResponseSender</span><span class="o">.</span><span class="n">send_error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_bad_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">correlation_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_correlation_id</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">BadRequestException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s1">&#39;BAD_REQUEST&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_unauthorized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">correlation_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_correlation_id</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">UnauthorizedException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_not_found</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">correlation_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_correlation_id</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s1">&#39;NOT_FOUND&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_conflict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">correlation_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_correlation_id</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">ConflictException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s1">&#39;CONFLICT&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_session_expired</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">correlation_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_correlation_id</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">UnknownException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s1">&#39;SESSION_EXPIRED&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">error</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="mi">440</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_internal_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">correlation_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_correlation_id</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">UnknownException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s1">&#39;INTERNAL&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_server_unavailable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">correlation_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_correlation_id</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">ConflictException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s1">&#39;SERVER_UNAVAILABLE&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">error</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="mi">503</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_facade.operations.FacadeOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Conceptual Vision Consulting LLC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+pip\_services3\_facade.build package
+====================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_facade.build.FacadeFactory
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_facade.build
+   :members:
+   :undoc-members:
+   :show-inheritance:

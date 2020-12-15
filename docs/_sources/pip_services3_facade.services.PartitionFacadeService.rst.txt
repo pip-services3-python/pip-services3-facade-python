@@ -1,0 +1,7 @@
+pip\_services3\_facade.services.PartitionFacadeService module
+=============================================================
+
+.. automodule:: pip_services3_facade.services.PartitionFacadeService
+   :members:
+   :undoc-members:
+   :show-inheritance:

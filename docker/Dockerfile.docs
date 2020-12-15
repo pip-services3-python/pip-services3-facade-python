@@ -1,0 +1,23 @@
+FROM python:3
+
+# set working directory
+WORKDIR /usr/src/app
+
+COPY requirements.txt .
+
+# copy all project
+COPY . .
+
+ARG COMPONENT_NAME
+
+ADD . $COMPONENT_NAME
+
+RUN pip install -r requirements.txt
+RUN pip install -U sphinx
+
+# docs generation
+RUN sphinx-apidoc -f -e -o build $COMPONENT_NAME
+RUN cp conf.py ./build/
+RUN mv build/modules.rst build/index.rst
+RUN sphinx-build -b html build docs -c .
+RUN rm -rf build

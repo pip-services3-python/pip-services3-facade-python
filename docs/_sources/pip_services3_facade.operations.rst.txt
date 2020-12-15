@@ -1,0 +1,19 @@
+pip\_services3\_facade.operations package
+=========================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_facade.operations.AboutOperations
+   pip_services3_facade.operations.FacadeOperations
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_facade.operations
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+pip\_services3\_facade.routes.FacadeRoutes module
+=================================================
+
+.. automodule:: pip_services3_facade.routes.FacadeRoutes
+   :members:
+   :undoc-members:
+   :show-inheritance:

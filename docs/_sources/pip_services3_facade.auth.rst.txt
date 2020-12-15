@@ -1,0 +1,20 @@
+pip\_services3\_facade.auth package
+===================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_facade.auth.BasicAuthManager
+   pip_services3_facade.auth.OwnerAuthManager
+   pip_services3_facade.auth.RoleAuthorizer
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_facade.auth
+   :members:
+   :undoc-members:
+   :show-inheritance:

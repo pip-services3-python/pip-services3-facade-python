@@ -1,0 +1,7 @@
+pip\_services3\_facade.conf module
+==================================
+
+.. automodule:: pip_services3_facade.conf
+   :members:
+   :undoc-members:
+   :show-inheritance:

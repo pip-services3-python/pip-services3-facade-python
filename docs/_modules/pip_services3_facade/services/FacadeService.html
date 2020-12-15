@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pip_services3_facade.services.FacadeService &#8212; Pip.Services Facade for Python API</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_facade.services.FacadeService</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pip_services3_facade.services.FacadeService</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">bottle</span>
+<span class="kn">from</span> <span class="nn">beaker.middleware</span> <span class="kn">import</span> <span class="n">SessionMiddleware</span>
+
+<span class="kn">from</span> <span class="nn">pip_services3_commons.config</span> <span class="kn">import</span> <span class="n">IConfigurable</span><span class="p">,</span> <span class="n">ConfigParams</span>
+<span class="kn">from</span> <span class="nn">pip_services3_commons.refer</span> <span class="kn">import</span> <span class="n">IReferences</span><span class="p">,</span> <span class="n">IReferenceable</span><span class="p">,</span> <span class="n">DependencyResolver</span>
+<span class="kn">from</span> <span class="nn">pip_services3_components.log</span> <span class="kn">import</span> <span class="n">CompositeLogger</span>
+
+<span class="kn">from</span> <span class="nn">.IFacadeService</span> <span class="kn">import</span> <span class="n">IFacadeService</span>
+
+
+<div class="viewcode-block" id="FacadeService"><a class="viewcode-back" href="../../../pip_services3_facade.services.FacadeService.html#pip_services3_facade.services.FacadeService.FacadeService">[docs]</a><span class="k">class</span> <span class="nc">FacadeService</span><span class="p">(</span><span class="n">IConfigurable</span><span class="p">,</span> <span class="n">IReferenceable</span><span class="p">,</span> <span class="n">IFacadeService</span><span class="p">):</span>
+    <span class="n">_root_path</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">_partition</span> <span class="o">=</span> <span class="n">SessionMiddleware</span><span class="p">(</span><span class="n">bottle</span><span class="o">.</span><span class="n">Bottle</span><span class="p">(</span><span class="n">catchall</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autojson</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">app</span>
+    <span class="n">_dependency_resolver</span> <span class="o">=</span> <span class="n">DependencyResolver</span><span class="p">()</span>
+    <span class="n">_logger</span> <span class="o">=</span> <span class="n">CompositeLogger</span><span class="p">()</span>
+
+<div class="viewcode-block" id="FacadeService.configure"><a class="viewcode-back" href="../../../pip_services3_facade.services.FacadeService.html#pip_services3_facade.services.FacadeService.FacadeService.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_as_string_with_default</span><span class="p">(</span><span class="s1">&#39;root_path&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span></div>
+
+<div class="viewcode-block" id="FacadeService.set_references"><a class="viewcode-back" href="../../../pip_services3_facade.services.FacadeService.html#pip_services3_facade.services.FacadeService.FacadeService.set_references">[docs]</a>    <span class="k">def</span> <span class="nf">set_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">references</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dependency_resolver</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FacadeService.get_root_path"><a class="viewcode-back" href="../../../pip_services3_facade.services.FacadeService.html#pip_services3_facade.services.FacadeService.FacadeService.get_root_path">[docs]</a>    <span class="k">def</span> <span class="nf">get_root_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span></div>
+
+<div class="viewcode-block" id="FacadeService.register_middleware"><a class="viewcode-back" href="../../../pip_services3_facade.services.FacadeService.html#pip_services3_facade.services.FacadeService.FacadeService.register_middleware">[docs]</a>    <span class="k">def</span> <span class="nf">register_middleware</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span><span class="o">.</span><span class="n">add_hook</span><span class="p">(</span><span class="s1">&#39;before_request&#39;</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FacadeService.register_middleware_for_path"><a class="viewcode-back" href="../../../pip_services3_facade.services.FacadeService.html#pip_services3_facade.services.FacadeService.FacadeService.register_middleware_for_path">[docs]</a>    <span class="k">def</span> <span class="nf">register_middleware_for_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span><span class="o">.</span><span class="n">add_hook</span><span class="p">(</span><span class="s1">&#39;before_request&#39;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">action</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">path</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span> <span class="ow">and</span> <span class="n">bottle</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">path</span><span class="p">))</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FacadeService.register_route"><a class="viewcode-back" href="../../../pip_services3_facade.services.FacadeService.html#pip_services3_facade.services.FacadeService.FacadeService.register_route">[docs]</a>    <span class="k">def</span> <span class="nf">register_route</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">route</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;del&#39;</span><span class="p">:</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;delete&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;Registering route </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_root_path</span><span class="p">()</span> <span class="o">+</span> <span class="n">route</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">route</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FacadeService.register_route_with_auth"><a class="viewcode-back" href="../../../pip_services3_facade.services.FacadeService.html#pip_services3_facade.services.FacadeService.FacadeService.register_route_with_auth">[docs]</a>    <span class="k">def</span> <span class="nf">register_route_with_auth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">route</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">authorize</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;del&#39;</span><span class="p">:</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;delete&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;Registering route </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_root_path</span><span class="p">()</span> <span class="o">+</span> <span class="n">route</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">route</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">authorize</span><span class="o">=</span><span class="n">authorize</span><span class="p">)</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_facade.services.FacadeService</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Conceptual Vision Consulting LLC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+pip\_services3\_facade.test package
+===================================
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_facade.test
+   :members:
+   :undoc-members:
+   :show-inheritance:

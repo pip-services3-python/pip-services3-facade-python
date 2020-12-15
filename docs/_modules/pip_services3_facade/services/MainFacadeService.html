@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pip_services3_facade.services.MainFacadeService &#8212; Pip.Services Facade for Python API</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_facade.services.MainFacadeService</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pip_services3_facade.services.MainFacadeService</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+
+<span class="kn">from</span> <span class="nn">bottle</span> <span class="kn">import</span> <span class="n">response</span><span class="p">,</span> <span class="n">request</span>
+
+<span class="kn">from</span> <span class="nn">pip_services3_commons.config</span> <span class="kn">import</span> <span class="n">ConfigParams</span>
+<span class="kn">from</span> <span class="nn">pip_services3_commons.errors</span> <span class="kn">import</span> <span class="n">ConfigException</span>
+<span class="kn">from</span> <span class="nn">pip_services3_commons.refer</span> <span class="kn">import</span> <span class="n">IReferences</span>
+<span class="kn">from</span> <span class="nn">pip_services3_commons.run</span> <span class="kn">import</span> <span class="n">IOpenable</span>
+<span class="kn">from</span> <span class="nn">pip_services3_components.auth</span> <span class="kn">import</span> <span class="n">CredentialParams</span><span class="p">,</span> <span class="n">CredentialResolver</span>
+<span class="kn">from</span> <span class="nn">pip_services3_components.connect</span> <span class="kn">import</span> <span class="n">ConnectionParams</span><span class="p">,</span> <span class="n">ConnectionResolver</span>
+
+<span class="kn">from</span> <span class="nn">pip_services3_rpc.services</span> <span class="kn">import</span> <span class="n">SSLCherryPyServer</span>
+
+<span class="kn">from</span> <span class="nn">.FacadeService</span> <span class="kn">import</span> <span class="n">FacadeService</span>
+
+
+<div class="viewcode-block" id="MainFacadeService"><a class="viewcode-back" href="../../../pip_services3_facade.services.MainFacadeService.html#pip_services3_facade.services.MainFacadeService.MainFacadeService">[docs]</a><span class="k">class</span> <span class="nc">MainFacadeService</span><span class="p">(</span><span class="n">FacadeService</span><span class="p">,</span> <span class="n">IOpenable</span><span class="p">):</span>
+    <span class="n">_default_config</span> <span class="o">=</span> <span class="n">ConfigParams</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span>
+        <span class="s1">&#39;root_path&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+
+        <span class="s1">&#39;connection.protocol&#39;</span><span class="p">,</span> <span class="s1">&#39;http&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;connection.hostname&#39;</span><span class="p">,</span> <span class="s1">&#39;0.0.0.0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;connection.port&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">,</span>
+
+        <span class="s1">&#39;credential.ssl_key_file&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;credential.ssl_crt_file&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;credential.ssl_ca_file&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+
+        <span class="s1">&#39;options.debug&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;options.maintenance_enabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;options.max_sockets&#39;</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="s1">&#39;options.max_req_size&#39;</span><span class="p">,</span> <span class="s1">&#39;1mb&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">__server</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__service</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__http</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__connection_resolver</span> <span class="o">=</span> <span class="n">ConnectionResolver</span><span class="p">()</span>
+    <span class="n">__credential_resolver</span> <span class="o">=</span> <span class="n">CredentialResolver</span><span class="p">()</span>
+
+    <span class="n">__debug</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">__maintance_enabled</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">__max_sockets</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">__max_req_size</span> <span class="o">=</span> <span class="s1">&#39;1mb&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MainFacadeService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="c1"># bottle app</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__service</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_partition</span>
+
+<div class="viewcode-block" id="MainFacadeService.is_maintance_enabled"><a class="viewcode-back" href="../../../pip_services3_facade.services.MainFacadeService.html#pip_services3_facade.services.MainFacadeService.MainFacadeService.is_maintance_enabled">[docs]</a>    <span class="k">def</span> <span class="nf">is_maintance_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maintance_enabled</span></div>
+
+<div class="viewcode-block" id="MainFacadeService.set_maintance_enabled"><a class="viewcode-back" href="../../../pip_services3_facade.services.MainFacadeService.html#pip_services3_facade.services.MainFacadeService.MainFacadeService.set_maintance_enabled">[docs]</a>    <span class="k">def</span> <span class="nf">set_maintance_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__maintance_enabled</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="MainFacadeService.configure"><a class="viewcode-back" href="../../../pip_services3_facade.services.MainFacadeService.html#pip_services3_facade.services.MainFacadeService.MainFacadeService.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">set_defaults</span><span class="p">(</span><span class="n">MainFacadeService</span><span class="o">.</span><span class="n">_default_config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__connection_resolver</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__credential_resolver</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_as_string_with_default</span><span class="p">(</span><span class="s1">&#39;root_path&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root_path</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__debug</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_as_boolean_with_default</span><span class="p">(</span><span class="s1">&#39;options.debug&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__debug</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__maintance_enabled</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_as_boolean_with_default</span><span class="p">(</span><span class="s1">&#39;options.maintenance_enabled&#39;</span><span class="p">,</span>
+                                                                      <span class="bp">self</span><span class="o">.</span><span class="n">__maintance_enabled</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__max_sockets</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_as_integer_with_default</span><span class="p">(</span><span class="s1">&#39;options.max_sockets&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__max_sockets</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__max_req_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_as_string_with_default</span><span class="p">(</span><span class="s1">&#39;options.max_req_size&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__max_req_size</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MainFacadeService.set_references"><a class="viewcode-back" href="../../../pip_services3_facade.services.MainFacadeService.html#pip_services3_facade.services.MainFacadeService.MainFacadeService.set_references">[docs]</a>    <span class="k">def</span> <span class="nf">set_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">references</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__connection_resolver</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__credential_resolver</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MainFacadeService.is_open"><a class="viewcode-back" href="../../../pip_services3_facade.services.MainFacadeService.html#pip_services3_facade.services.MainFacadeService.MainFacadeService.is_open">[docs]</a>    <span class="k">def</span> <span class="nf">is_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__http</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="MainFacadeService.open"><a class="viewcode-back" href="../../../pip_services3_facade.services.MainFacadeService.html#pip_services3_facade.services.MainFacadeService.MainFacadeService.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">correlation_id</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__http</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_connetcion</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">)</span>
+        <span class="n">credential</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_credential</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="n">connection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__server</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__create_server</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">credential</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__configure_service</span><span class="p">()</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_host</span><span class="p">()</span>
+        <span class="n">host_name</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_port</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__server</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__server</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+
+        <span class="k">def</span> <span class="nf">start_server</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__service</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">server</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__server</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__debug</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="n">ex</span><span class="p">,</span> <span class="s1">&#39;Failed to start HTTP server at </span><span class="si">{}</span><span class="s1">:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">host_name</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+
+        <span class="c1"># Start server in thread</span>
+        <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">start_server</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="c1"># Time for start server</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s1">&#39;Started HTTP server </span><span class="si">{}</span><span class="s1">:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">host_name</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MainFacadeService.close"><a class="viewcode-back" href="../../../pip_services3_facade.services.MainFacadeService.html#pip_services3_facade.services.MainFacadeService.MainFacadeService.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">correlation_id</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__server</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;Closed HTTP server&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__server</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__service</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;Failed while closing HTTP server: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_connetcion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">correlation_id</span><span class="p">):</span>
+        <span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__connection_resolver</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">)</span>
+
+        <span class="c1"># Check for connection</span>
+        <span class="k">if</span> <span class="n">connection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;NO_CONNECTION&quot;</span><span class="p">,</span> <span class="s2">&quot;Connection for REST client is not defined&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Check for type</span>
+            <span class="n">protocol</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_protocol</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;http&#39;</span> <span class="o">!=</span> <span class="n">protocol</span> <span class="ow">and</span> <span class="s1">&#39;https&#39;</span> <span class="o">!=</span> <span class="n">protocol</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConfigException</span><span class="p">(</span>
+                    <span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;WRONG_PROTOCOL&quot;</span><span class="p">,</span> <span class="s2">&quot;Protocol is not supported by REST connection&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">with_details</span><span class="p">(</span>
+                    <span class="s2">&quot;protocol&quot;</span><span class="p">,</span> <span class="n">protocol</span><span class="p">)</span>
+            <span class="c1"># Check for host</span>
+            <span class="k">elif</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_host</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConfigException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;NO_HOST&quot;</span><span class="p">,</span> <span class="s2">&quot;No host is configured in REST connection&quot;</span><span class="p">)</span>
+            <span class="c1"># Check for port</span>
+            <span class="k">elif</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_port</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConfigException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;NO_PORT&quot;</span><span class="p">,</span> <span class="s2">&quot;No port is configured in REST connection&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">connection</span>
+
+    <span class="k">def</span> <span class="nf">_get_credential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">correlation_id</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+        <span class="c1"># Credentials are not required unless HTTPS is used</span>
+        <span class="k">if</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_protocol</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;https&#39;</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">credential</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__credential_resolver</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">)</span>
+        <span class="c1"># Check for connection</span>
+        <span class="k">if</span> <span class="n">credential</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;NO_CREDENTIAL&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;SSL certificates are not configured for HTTPS protocol&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">credential</span><span class="o">.</span><span class="n">get_as_nullable_string</span><span class="p">(</span><span class="s1">&#39;ssl_key_file&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConfigException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;NO_SSL_KEY_FILE&quot;</span><span class="p">,</span>
+                                      <span class="s2">&quot;SSL key file is not configured in credentials&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">credential</span><span class="o">.</span><span class="n">get_as_nullable_string</span><span class="p">(</span><span class="s1">&#39;ssl_crt_file&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConfigException</span><span class="p">(</span><span class="n">correlation_id</span><span class="p">,</span> <span class="s2">&quot;NO_SSL_CRT_FILE&quot;</span><span class="p">,</span>
+                                      <span class="s2">&quot;SSL crt file is not configured in credentials&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">credential</span>
+
+    <span class="k">def</span> <span class="nf">__create_server</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">credential</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_protocol</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;https&#39;</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_protocol</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;https&#39;</span><span class="p">:</span>
+                <span class="n">ssl_key_file</span> <span class="o">=</span> <span class="n">credential</span><span class="o">.</span><span class="n">get_as_nullable_string</span><span class="p">(</span><span class="s1">&#39;ssl_key_file&#39;</span><span class="p">)</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ssl_key_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                    <span class="n">private_key</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+                <span class="n">ssl_crt_file</span> <span class="o">=</span> <span class="n">credential</span><span class="o">.</span><span class="n">get_as_nullable_string</span><span class="p">(</span><span class="s1">&#39;ssl_crt_file&#39;</span><span class="p">)</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ssl_crt_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                    <span class="n">certfile</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+                <span class="c1"># ca = []</span>
+                <span class="c1">#</span>
+                <span class="c1"># ssl_ca_file = credential.get_as_nullable_string(&#39;ssl_ca_file&#39;)</span>
+                <span class="c1"># if ssl_ca_file is not None:</span>
+                <span class="c1">#     with open(ssl_ca_file, &#39;rb&#39;) as file:</span>
+                <span class="c1">#         ca_text = file.read()</span>
+                <span class="c1">#         while ca_text is not None and len(ca_text.strip()) &gt; 0:</span>
+                <span class="c1">#             crt_index = ca_text.rindex(b&#39;-----BEGIN CERTIFICATE-----&#39;)</span>
+                <span class="c1">#             if crt_index &gt; -1:</span>
+                <span class="c1">#                 ca.append(ca_text[crt_index:])</span>
+                <span class="c1">#                 ca_text = ca_text[0:crt_index]</span>
+
+                <span class="k">return</span> <span class="n">SSLCherryPyServer</span><span class="p">(</span><span class="n">certfile</span><span class="o">=</span><span class="n">certfile</span><span class="p">,</span>
+                                         <span class="n">keyfile</span><span class="o">=</span><span class="n">private_key</span><span class="p">,</span>
+                                         <span class="n">request_queue_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__max_sockets</span><span class="p">,</span>
+                                         <span class="n">max_request_body_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__max_req_size</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">SSLCherryPyServer</span><span class="p">(</span><span class="n">request_queue_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__max_sockets</span><span class="p">,</span>
+                                 <span class="n">max_request_body_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__max_req_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__configure_service</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__service</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;catchall&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__service</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;autojson&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Enable CORS requests</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__service</span><span class="o">.</span><span class="n">add_hook</span><span class="p">(</span><span class="s1">&#39;after_request&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__enable_cors</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__service</span><span class="o">.</span><span class="n">add_hook</span><span class="p">(</span><span class="s1">&#39;after_request&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__do_maintance</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__service</span><span class="o">.</span><span class="n">add_hook</span><span class="p">(</span><span class="s1">&#39;after_request&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__no_cache</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__enable_cors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Access-Control-Max-Age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;5&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Access-Control-Allow-Origin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Access-Control-Allow-Methods&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;PUT, GET, POST, DELETE, OPTIONS&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span>
+            <span class="s1">&#39;Access-Control-Allow-Headers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Authorization, Origin, Accept, Content-Type, X-Requested-With&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__do_maintance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :return: maintenance error code</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make this more sophisticated</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maintance_enabled</span><span class="p">:</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Retry-After&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3600</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="mi">503</span>
+
+    <span class="k">def</span> <span class="nf">__no_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prevents IE from caching REST requests</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Cache-Control&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;no-cache, no-store, must-revalidate&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Pragma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;no-cache&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Expires&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_facade.services.MainFacadeService</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Conceptual Vision Consulting LLC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+pip\_services3\_facade.auth.BasicAuthManager module
+===================================================
+
+.. automodule:: pip_services3_facade.auth.BasicAuthManager
+   :members:
+   :undoc-members:
+   :show-inheritance:

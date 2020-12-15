@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pip_services3_facade.operations.AboutOperations &#8212; Pip.Services Facade for Python API</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_facade.operations.AboutOperations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pip_services3_facade.operations.AboutOperations</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">import</span> <span class="nn">netifaces</span>
+<span class="kn">from</span> <span class="nn">pip_services3_commons.refer</span> <span class="kn">import</span> <span class="n">IReferences</span><span class="p">,</span> <span class="n">Descriptor</span>
+<span class="kn">from</span> <span class="nn">pip_services3_components.info</span> <span class="kn">import</span> <span class="n">ContextInfo</span>
+
+<span class="c1"># TODO need add HttpRequestDetector from rpc</span>
+<span class="kn">from</span> <span class="nn">pip_services3_rpc.services</span> <span class="kn">import</span> <span class="n">HttpResponseDetector</span><span class="p">,</span> <span class="n">HttpResponseSender</span>
+
+<span class="kn">from</span> <span class="nn">.FacadeOperations</span> <span class="kn">import</span> <span class="n">FacadeOperations</span>
+
+
+<div class="viewcode-block" id="AboutOperations"><a class="viewcode-back" href="../../../pip_services3_facade.operations.AboutOperations.html#pip_services3_facade.operations.AboutOperations.AboutOperations">[docs]</a><span class="k">class</span> <span class="nc">AboutOperations</span><span class="p">(</span><span class="n">FacadeOperations</span><span class="p">):</span>
+    <span class="n">__context_info</span><span class="p">:</span> <span class="n">ContextInfo</span>
+
+<div class="viewcode-block" id="AboutOperations.set_references"><a class="viewcode-back" href="../../../pip_services3_facade.operations.AboutOperations.html#pip_services3_facade.operations.AboutOperations.AboutOperations.set_references">[docs]</a>    <span class="k">def</span> <span class="nf">set_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">references</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set_references</span><span class="p">(</span><span class="n">references</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span> <span class="o">=</span> <span class="n">references</span><span class="o">.</span><span class="n">get_one_optional</span><span class="p">(</span><span class="n">Descriptor</span><span class="p">(</span><span class="s1">&#39;pip-services&#39;</span><span class="p">,</span> <span class="s1">&#39;context-info&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="AboutOperations.get_about_operation"><a class="viewcode-back" href="../../../pip_services3_facade.operations.AboutOperations.html#pip_services3_facade.operations.AboutOperations.AboutOperations.get_about_operation">[docs]</a>    <span class="k">def</span> <span class="nf">get_about_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">req</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_about</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__get_network_adresses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">interfaces</span> <span class="o">=</span> <span class="n">netifaces</span><span class="o">.</span><span class="n">interfaces</span><span class="p">()</span>
+        <span class="n">addresses</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">interface</span> <span class="ow">in</span> <span class="n">interfaces</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">netifaces</span><span class="o">.</span><span class="n">AF_INET</span> <span class="ow">in</span> <span class="n">netifaces</span><span class="o">.</span><span class="n">ifaddresses</span><span class="p">(</span><span class="n">interface</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">addr</span> <span class="o">=</span> <span class="n">netifaces</span><span class="o">.</span><span class="n">ifaddresses</span><span class="p">(</span><span class="n">interface</span><span class="p">)[</span><span class="n">netifaces</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;addr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">netifaces</span><span class="o">.</span><span class="n">ifaddresses</span><span class="p">(</span><span class="n">interface</span><span class="p">)[</span><span class="n">netifaces</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;netmask&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">10</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">127</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">172</span> <span class="ow">and</span> <span class="mi">16</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">31</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                                <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">192</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">168</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                                <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">100</span> <span class="ow">and</span> <span class="mi">64</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">127</span><span class="p">))</span> <span class="ow">or</span> <span class="n">mask</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;255.0.0.0&#39;</span><span class="p">,</span>
+                                                                                                    <span class="s1">&#39;255.240.0.0&#39;</span><span class="p">,</span>
+                                                                                                    <span class="s1">&#39;255.255.0.0&#39;</span><span class="p">,</span>
+                                                                                                    <span class="s1">&#39;255.192.0.0&#39;</span><span class="p">]:</span>
+                    <span class="n">addresses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">netifaces</span><span class="o">.</span><span class="n">ifaddresses</span><span class="p">(</span><span class="n">interface</span><span class="p">)[</span><span class="n">netifaces</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;addr&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__get_about</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+        <span class="n">about</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;server&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;unknown&quot;</span><span class="p">,</span>
+                <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span><span class="o">.</span><span class="n">description</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span><span class="o">.</span><span class="n">properties</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s1">&#39;uptime&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span><span class="o">.</span><span class="n">uptime</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span><span class="o">.</span><span class="n">start_time</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__context_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;current_time&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                <span class="s1">&#39;protocol&#39;</span><span class="p">:</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+                <span class="s1">&#39;host&#39;</span><span class="p">:</span> <span class="n">HttpResponseDetector</span><span class="o">.</span><span class="n">detect_server_host</span><span class="p">(</span><span class="n">req</span><span class="p">),</span>
+                <span class="s1">&#39;port&#39;</span><span class="p">:</span> <span class="n">HttpResponseDetector</span><span class="o">.</span><span class="n">detect_server_port</span><span class="p">(</span><span class="n">req</span><span class="p">),</span>
+                <span class="s1">&#39;addresses&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_network_adresses</span><span class="p">(),</span>
+                <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="n">req</span><span class="o">.</span><span class="n">url</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;client&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;address&#39;</span><span class="p">:</span> <span class="n">HttpResponseDetector</span><span class="o">.</span><span class="n">detect_address</span><span class="p">(</span><span class="n">req</span><span class="p">),</span>
+                <span class="s1">&#39;client&#39;</span><span class="p">:</span> <span class="n">HttpResponseDetector</span><span class="o">.</span><span class="n">detect_browser</span><span class="p">(</span><span class="n">req</span><span class="p">),</span>
+                <span class="s1">&#39;platform&#39;</span><span class="p">:</span> <span class="n">HttpResponseDetector</span><span class="o">.</span><span class="n">detect_platform</span><span class="p">(</span><span class="n">req</span><span class="p">),</span>
+                <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">req</span><span class="o">.</span><span class="n">get_header</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">about</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">HttpResponseSender</span><span class="o">.</span><span class="n">_to_json</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_facade.operations.AboutOperations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Conceptual Vision Consulting LLC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>

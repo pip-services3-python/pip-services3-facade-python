@@ -1,0 +1,21 @@
+pip\_services3\_facade.services package
+=======================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_facade.services.FacadeService
+   pip_services3_facade.services.IFacadeService
+   pip_services3_facade.services.MainFacadeService
+   pip_services3_facade.services.PartitionFacadeService
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_facade.services
+   :members:
+   :undoc-members:
+   :show-inheritance:

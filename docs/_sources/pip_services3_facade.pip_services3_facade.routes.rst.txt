@@ -1,0 +1,18 @@
+pip\_services3\_facade.pip\_services3\_facade.routes package
+============================================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_facade.pip_services3_facade.routes.FacadeRoutes
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_facade.pip_services3_facade.routes
+   :members:
+   :undoc-members:
+   :show-inheritance:

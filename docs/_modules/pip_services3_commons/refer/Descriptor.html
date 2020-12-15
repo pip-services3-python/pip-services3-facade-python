@@ -1,0 +1,300 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pip_services3_commons.refer.Descriptor &#8212; Pip.Services Facade for Python API</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_commons.refer.Descriptor</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pip_services3_commons.refer.Descriptor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    pip_services_runtime.refer.Descriptor</span>
+<span class="sd">    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="sd">    </span>
+<span class="sd">    Component descriptor implementation</span>
+<span class="sd">    </span>
+<span class="sd">    :copyright: Conceptual Vision Consulting LLC 2018-2019, see AUTHORS for more details.</span>
+<span class="sd">    :license: MIT, see LICENSE for more details.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">..errors.ConfigException</span> <span class="kn">import</span> <span class="n">ConfigException</span>
+
+<span class="k">class</span> <span class="nc">Descriptor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Locator type that most often used in PipServices toolkit.</span>
+<span class="sd">    It locates components using several fields:</span>
+<span class="sd">        - Group: a package or just named group of components like &quot;pip-services&quot;</span>
+<span class="sd">        - Type: logical component type that defines it&#39;s contract like &quot;persistence&quot;</span>
+<span class="sd">        - Kind: physical implementation type like &quot;mongodb&quot;</span>
+<span class="sd">        - Name: unique component name like &quot;default&quot;</span>
+<span class="sd">        - Version: version of the component contract like &quot;1.0&quot;</span>
+
+<span class="sd">    The locator matching can be done by all or only few selected fields.</span>
+<span class="sd">    The fields that shall be excluded from the matching must be set to &lt;code&gt;&quot;*&quot;&lt;/code&gt; or &lt;code&gt;null&lt;/code&gt;.</span>
+<span class="sd">    That approach allows to implement many interesting scenarios. For instance:</span>
+<span class="sd">        - Locate all loggers (match by type and version)</span>
+<span class="sd">        - Locate persistence components for a microservice (match by group and type)</span>
+<span class="sd">        - Locate specific component by its name (match by name)</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        locator1 = Descriptor(&quot;mygroup&quot;, &quot;connector&quot;, &quot;aws&quot;, &quot;default&quot;, &quot;1.0&quot;)</span>
+<span class="sd">        locator2 = Descriptor.from_string(&quot;mygroup:connector:*:*:1.0&quot;)</span>
+
+<span class="sd">        locator1.match(locator2);		// Result: true</span>
+<span class="sd">        locator1.eq(locator2);		// Result: true</span>
+<span class="sd">        locator1.exact_match(locator2);	// Result: false</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_group</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_type</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_kind</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_version</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new instance of the descriptor.</span>
+
+<span class="sd">        :param group: a logical component group</span>
+
+<span class="sd">        :param type: a logical component type or contract</span>
+
+<span class="sd">        :param kind: a component implementation type</span>
+
+<span class="sd">        :param name: a unique component name</span>
+
+<span class="sd">        :param version: a component implementation version</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="s2">&quot;*&quot;</span> <span class="o">==</span> <span class="n">group</span> <span class="k">else</span> <span class="n">group</span> 
+        <span class="nb">type</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="s2">&quot;*&quot;</span> <span class="o">==</span> <span class="nb">type</span> <span class="k">else</span> <span class="nb">type</span>
+        <span class="n">kind</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="s2">&quot;*&quot;</span> <span class="o">==</span> <span class="n">kind</span> <span class="k">else</span> <span class="n">kind</span>
+        <span class="n">name</span>  <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="s2">&quot;*&quot;</span> <span class="o">==</span> <span class="n">name</span> <span class="k">else</span> <span class="n">name</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="s2">&quot;*&quot;</span> <span class="o">==</span> <span class="n">version</span> <span class="k">else</span> <span class="n">version</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_group</span> <span class="o">=</span> <span class="n">group</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kind</span> <span class="o">=</span> <span class="n">kind</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">version</span>
+
+    <span class="k">def</span> <span class="nf">get_group</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Gets the component&#39;s logical group.</span>
+
+<span class="sd">        :return: the component&#39;s logical group</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span> 
+
+    <span class="k">def</span> <span class="nf">get_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the component&#39;s logical type.</span>
+
+<span class="sd">        :return: the component&#39;s logical type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type</span>
+
+    <span class="k">def</span> <span class="nf">get_kind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the component&#39;s implementation type.</span>
+
+<span class="sd">        :return: the component&#39;s implementation type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kind</span>
+
+    <span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the unique component&#39;s name.</span>
+
+<span class="sd">        :return: the unique component&#39;s name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> 
+
+    <span class="k">def</span> <span class="nf">get_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the component&#39;s implementation version.</span>
+
+<span class="sd">        :return: the component&#39;s implementation version.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> 
+
+    <span class="k">def</span> <span class="nf">_match_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field1</span><span class="p">,</span> <span class="n">field2</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">field1</span> <span class="ow">is</span> <span class="kc">None</span> \
+            <span class="ow">or</span> <span class="n">field2</span> <span class="ow">is</span> <span class="kc">None</span> \
+            <span class="ow">or</span> <span class="n">field1</span> <span class="o">==</span> <span class="n">field2</span>
+
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descriptor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Partially matches this descriptor to another descriptor.</span>
+<span class="sd">        Fields that contain &quot;*&quot; or null are excluded from the match.</span>
+
+<span class="sd">        :param descriptor: the descriptor to match this one against.</span>
+
+<span class="sd">        :return: true if descriptors match and false otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_group</span><span class="p">())</span> \
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_type</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_type</span><span class="p">())</span> \
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kind</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_kind</span><span class="p">())</span> \
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_name</span><span class="p">())</span> \
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_version</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_exact_match_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field1</span><span class="p">,</span> <span class="n">field2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">field2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">field1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">field2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">field1</span> <span class="o">==</span> <span class="n">field2</span>
+
+    <span class="k">def</span> <span class="nf">exact_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descriptor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Matches this descriptor to another descriptor by all fields. No exceptions are made.</span>
+
+<span class="sd">        :param descriptor: the descriptor to match this one against.</span>
+
+<span class="sd">        :return: true if descriptors match and false otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exact_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_group</span><span class="p">())</span> \
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exact_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_type</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_type</span><span class="p">())</span> \
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exact_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kind</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_kind</span><span class="p">())</span> \
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exact_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_name</span><span class="p">())</span> \
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exact_match_field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">,</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">get_version</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">is_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks whether all descriptor fields are set.</span>
+<span class="sd">        If descriptor has at least one &quot;*&quot; or null field it is considered &quot;incomplete&quot;</span>
+
+<span class="sd">        :return: true if all descriptor fields are defined and false otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> \
+            <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kind</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compares this descriptor to a value.</span>
+<span class="sd">        If value is a Descriptor it tries to match them, otherwise the method returns false.</span>
+
+<span class="sd">        :param other: the value to match against this descriptor.</span>
+
+<span class="sd">        :return: true if the value is matching descriptor and false otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Descriptor</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets a string representation of the object.</span>
+<span class="sd">        The result is a colon-separated list of descriptor fields as &quot;mygroup:connector:aws:default:1.0&quot;</span>
+
+<span class="sd">        :return: a string representation of the object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;*&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="s1">&#39;:&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;*&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="s1">&#39;:&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kind</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kind</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;*&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="s1">&#39;:&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;*&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="s1">&#39;:&#39;</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;*&#39;</span>
+        <span class="k">return</span> <span class="n">result</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_string</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parses colon-separated list of descriptor fields and returns them as a Descriptor.</span>
+
+<span class="sd">        :param value: colon-separated descriptor fields to initialize Descriptor.</span>
+
+<span class="sd">        :return: a newly created Descriptor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+                
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigException</span><span class="p">(</span>
+                <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;BAD_DESCRIPTOR&quot;</span><span class="p">,</span> <span class="s2">&quot;Descriptor &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; is in wrong format&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">with_details</span><span class="p">(</span><span class="s2">&quot;descriptor&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">Descriptor</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Pip.Services Facade for Python API</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pip_services3_commons.refer.Descriptor</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Conceptual Vision Consulting LLC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+pip\_services3\_facade.pip\_services3\_facade.operations.FacadeOperations module
+================================================================================
+
+.. automodule:: pip_services3_facade.pip_services3_facade.operations.FacadeOperations
+   :members:
+   :undoc-members:
+   :show-inheritance:

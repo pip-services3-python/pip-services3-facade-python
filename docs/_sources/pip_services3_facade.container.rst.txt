@@ -1,0 +1,18 @@
+pip\_services3\_facade.container package
+========================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_facade.container.FacadeProcess
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_facade.container
+   :members:
+   :undoc-members:
+   :show-inheritance:

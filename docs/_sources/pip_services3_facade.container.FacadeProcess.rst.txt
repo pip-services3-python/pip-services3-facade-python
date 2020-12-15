@@ -1,0 +1,7 @@
+pip\_services3\_facade.container.FacadeProcess module
+=====================================================
+
+.. automodule:: pip_services3_facade.container.FacadeProcess
+   :members:
+   :undoc-members:
+   :show-inheritance:

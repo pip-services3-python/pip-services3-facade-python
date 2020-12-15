@@ -1,0 +1,23 @@
+pip\_services3\_facade.pip\_services3\_facade package
+=====================================================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pip_services3_facade.pip_services3_facade.auth
+   pip_services3_facade.pip_services3_facade.build
+   pip_services3_facade.pip_services3_facade.container
+   pip_services3_facade.pip_services3_facade.operations
+   pip_services3_facade.pip_services3_facade.routes
+   pip_services3_facade.pip_services3_facade.services
+
+Module contents
+---------------
+
+.. automodule:: pip_services3_facade.pip_services3_facade
+   :members:
+   :undoc-members:
+   :show-inheritance:
