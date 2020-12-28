@@ -10,3 +10,4 @@
 /docker-compose*.yml
 /*.sh
 /*.ps1
+/.github
