@@ -10,17 +10,19 @@ $docsImage="$($component.registry)/$($component.name):$($component.version)-$($c
 $container=$component.name
 
 # Remove documentation files
-if (Test-Path "docs") {
-    Remove-Item -Recurse -Force -Path "docs"
-}
-if (Test-Path "build") {
-    Remove-Item -Recurse -Force -Path "build"
+if (Test-Path "$PSScriptRoot/docs") {
+    Remove-Item -Recurse -Force -Path "$PSScriptRoot/docs"
 }
 
 # Build docker image
-docker build -f docker/Dockerfile.docs -t $docsImage . --build-arg COMPONENT_NAME=$($component.name)
+docker build --build-arg COMPONENT_NAME="$($component.name)" -f docker/Dockerfile.docs -t $docsImage .
 
 # Create and copy compiled files, then destroy
 docker create --name $container $docsImage
-docker cp "$($container):usr/src/app/docs" ./docs
+docker cp "$($container):/docs" "$PSScriptRoot/docs"
 docker rm $container
+
+# Verify that docs folder was indeed created after generating documentation
+if (-not (Test-Path "$PSScriptRoot/docs")) {
+    Write-Error "docs folder doesn't exist in root dir. Build failed. See logs above for more information."
+}

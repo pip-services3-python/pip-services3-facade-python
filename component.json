@@ -1,6 +1,14 @@
 {
-    "name": "pip_services3_facade",
-    "registry": "pipdevs",
+    "name":  "pip_services3_facade",
+    "type": "module",
+    "language": "python",
     "version": "3.0.0",
-    "build": 0
+    "build": 0,
+    "registry": "pipdevs",
+    "artifacts": [
+        {
+            "name":  "<name>",
+            "type": "pypi"
+        }
+    ]
 }
