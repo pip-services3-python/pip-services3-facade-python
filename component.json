@@ -1,5 +1,5 @@
 {
-    "name":  "pip_services3_facade",
+    "name":  "pip-services3-facade",
     "type": "module",
     "language": "python",
     "version": "3.0.0",
